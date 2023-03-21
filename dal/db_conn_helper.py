@@ -104,7 +104,6 @@ def get_db_conn() -> Connection:
 
 
 def get_db_conn_toml():
-
     toml_path = "settings/secrets.toml"
 
     with open(toml_path, "r") as foo:

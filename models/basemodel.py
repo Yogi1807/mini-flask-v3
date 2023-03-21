@@ -3,7 +3,6 @@ from datetime import datetime
 
 
 class Base(BaseModel):
-
     url: str
     created: datetime
     edited: datetime

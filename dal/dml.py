@@ -233,5 +233,69 @@ def upsert_films(film: Dict, endpoint: str) -> Optional[int]:
     return result
 
 
+def upsert_planets(planet: Dict, endpoint: str):
+    """
+    NOTE:-
+        upsert = update + insert
+        "swapi.dev/api/films/1
+    Inserts values into `films` table, updates on duplicate key.
+    Args:
+        planet (dict):
+        endpoint (str):
+    Returns:
+    """
+
+    connection = get_db_conn()
+    planet = OrderedDict(planet)
+    planet_id = int(get_url_ids([endpoint]))
+
+    keys_ = []
+    values_ = []
+
+    for key, val in planet.items():
+        keys_.append(key)
+        if isinstance(val, list):
+            values_.append(get_url_ids(val))
+        else:
+            values_.append(val)
+
+    # Here we are importing some modules inside the func to avoid circular imports
+    from models.datamodels.planets import Planet_
+    from pydantic.error_wrappers import ValidationError
+
+    try:
+        if planet is not OrderedDict([("Details", "Not Found")]):
+            Planet_(**planet)
+        else:
+            print(f"[ WARNING ] Endpoint - {endpoint} - yields nothing!!")
+            return None
+    except ValidationError as ex:
+        print(
+            f"""[ Error ] fetched film record does not meet validations.
+            Perhaps, type conversions required. More details on error  - {ex}"""
+        )
+
+    try:
+        with connection.cursor() as cursor:
+            sql_magic = build_upsert_sql_query(
+                "planet",
+                "INSERT INTO",
+                "planet_id",
+                planet_id,
+                "ON DUPLICATE KEY UPDATE",
+                keys_,
+                values_,
+            )
+            result = cursor.execute(sql_magic)
+            connection.commit()
+    except pymysql.Error as ex:
+        logging.error(f"ERROR DETAILS :- {ex}")
+        return 0
+    finally:
+        connection.close()
+
+    return result
+
+
 if __name__ == "__main__":
     insert_resource("characters", "char_id", 1, ["name", "height"], ["prashant", "176"])
